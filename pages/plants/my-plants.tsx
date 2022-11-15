@@ -1,9 +1,11 @@
+import Link from "next/link"
 import React from "react"
-import Header from "../../Header"
+import Header from "../../components/Header"
+import { IPlant } from "../../interfaces"
 
 type Props = {}
 
-const MyPlants = (props: Props) => {
+const MyPlants = ({}: Props) => {
   return (
     <div>
       <Header />
