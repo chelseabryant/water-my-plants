@@ -19,6 +19,9 @@ const Header = (props: Props) => {
         <li>
           <Link href="/calendar">Calendar</Link>
         </li>
+        <li>
+          <Link href="/login">Login</Link>
+        </li>
       </ul>
     </div>
   )
