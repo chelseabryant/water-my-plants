@@ -10,3 +10,9 @@ export interface IPlant {
     humidity: string,
     image: string
 }
+
+export interface IUser {
+    user_id: number,
+    name: string,
+    email: string,
+}

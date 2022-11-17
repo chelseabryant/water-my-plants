@@ -1,5 +1,6 @@
 import { useState } from "react"
 import Header from "../components/Header"
+import { useUser } from "../contexts/UserContext"
 
 type Props = {}
 
@@ -8,8 +9,8 @@ const Login = (props: Props) => {
   const [name, setName] = useState<string>("")
   const [email, setEmail] = useState<string>("")
   const [password, setPassword] = useState<string>("")
-  const [errorMessage, setErrorMessage] = useState<boolean>(false)
-  const [authenticated, setAuthenticated] = useState<boolean>(false)
+  const [errorMessage, setErrorMessage] = useState<string>("")
+  const { user, setUser } = useUser()
 
   const nameInput = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setName(e.target.value)
@@ -28,7 +29,7 @@ const Login = (props: Props) => {
     if (isCreating) {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/users`,
+          `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/users/create`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -40,9 +41,33 @@ const Login = (props: Props) => {
           }
         )
         const data = await response.json()
-        console.log(data)
+
+        setUser(data)
       } catch (e) {
         console.log("HIT CATCH: ", e)
+      }
+    } else {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/users/login`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: email,
+              password: password,
+            }),
+          }
+        )
+        const data = await response.json()
+        console.log("data: ", data.error)
+        if (data.user_id) {
+          setUser(data)
+        } else {
+          setErrorMessage(data.error)
+        }
+      } catch (e) {
+        console.log("HIT CATCH ", e)
       }
     }
   }
@@ -51,13 +76,15 @@ const Login = (props: Props) => {
     <div>
       <Header />
       <div>
-        {authenticated ? (
-          "Thank you for logging in!"
+        {user.name ? (
+          `Thank you ${user.name} for logging in!`
         ) : (
           <form onSubmit={login}>
             <h3>{isCreating ? "Create an account" : "Login"}</h3>
-            <p>{errorMessage ? "Email or password incorrect" : ""}</p>
-            <input placeholder="Enter first name here" onChange={nameInput} />
+            {errorMessage && !isCreating && <p>{errorMessage}</p>}
+            {isCreating && (
+              <input placeholder="Enter first name here" onChange={nameInput} />
+            )}
             <input placeholder="Enter email here" onChange={emailInput} />
             <input placeholder="Enter password here" onChange={passwordInput} />
             <button type="button" onClick={() => setIsCreating(!isCreating)}>
