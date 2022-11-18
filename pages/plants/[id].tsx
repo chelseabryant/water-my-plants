@@ -10,6 +10,7 @@ type Props = {}
 
 export default function PlantDetails() {
   const [plant, setPlant] = useState<IPlant>({} as IPlant)
+  const [addedPlant, setAddedPlant] = useState()
   const router = useRouter()
   const { user } = useUser()
 
@@ -42,18 +43,23 @@ associated with that user. */
       }
     )
     const data = await response.json()
+    setAddedPlant(1)
   }
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     const response = await fetch(`${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/plants/my-plants`, {
-  //       method: "GET"
-  //     })
-  //     const data = await response.json()
-  //     console.log("")
-  //   }
-
-  // }, [])
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/plants/added-plants?user_id=${user.id}&plant_id=${router.query.id}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      )
+      const data = await response.json()
+      setAddedPlant(data.length)
+    }
+    fetchData()
+  }, [])
 
   return (
     <div>
@@ -67,9 +73,12 @@ associated with that user. */
         <p>Fertilizing: {plant.fertilize}</p>
         <p>Temperature tolerance: {plant.temperature}</p>
         <p>Humidity: {plant.humidity}</p>
-        {user.id && (
-          <button onClick={onAddClick}>Add plant to my plants</button>
-        )}
+        {user.id &&
+          (!addedPlant ? (
+            <button onClick={onAddClick}>Add plant to my plants</button>
+          ) : (
+            <button disabled>Added to my plants</button>
+          ))}
       </ul>
       <Footer />
     </div>
