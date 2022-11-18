@@ -41,8 +41,8 @@ const Login = (props: Props) => {
           }
         )
         const data = await response.json()
-
         setUser(data)
+        setErrorMessage("")
       } catch (e) {
         console.log("HIT CATCH: ", e)
       }
@@ -60,9 +60,9 @@ const Login = (props: Props) => {
           }
         )
         const data = await response.json()
-        console.log("data: ", data.error)
-        if (data.user_id) {
+        if (data.id) {
           setUser(data)
+          setErrorMessage("")
         } else {
           setErrorMessage(data.error)
         }
@@ -76,8 +76,8 @@ const Login = (props: Props) => {
     <div>
       <Header />
       <div>
-        {user.name ? (
-          `Thank you ${user.name} for logging in!`
+        {user.username ? (
+          `Thank you ${user.username} for logging in!`
         ) : (
           <form onSubmit={login}>
             <h3>{isCreating ? "Create an account" : "Login"}</h3>

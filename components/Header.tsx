@@ -16,13 +16,15 @@ const Header = () => {
           <Link href="/plants/explore">Explore Plants</Link>
         </li>
         <li>
-          <Link href="/plants/my-plants">My Plants</Link>
+          <Link href="/plants/my-plants">
+            {user.id ? `${user.username}'s plants` : "My plants"}
+          </Link>
         </li>
         <li>
           <Link href="/calendar">Calendar</Link>
         </li>
         <li>
-          {user.user_id ? (
+          {user.id ? (
             <button onClick={() => setUser({} as IUser)}>Log out</button>
           ) : (
             <Link href="/login">Login</Link>

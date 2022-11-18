@@ -1,6 +1,11 @@
+export interface IUser {
+    id: number,
+    username: string,
+    email: string
+}
 
 export interface IPlant {
-    id: string,
+    id: number,
     name: string,
     botanical: string,
     sun: string,
@@ -11,8 +16,8 @@ export interface IPlant {
     image: string
 }
 
-export interface IUser {
-    user_id: number,
+export interface IMyPlant {
+    id: number,
     name: string,
-    email: string,
+    image: string
 }
