@@ -30,7 +30,6 @@ const Calendar = (props: Props) => {
     description: string // This column will be like a VARCHAR(500) so the user can describe the task
   }
 
-  // PUT ALL FETCHS INTO A TRY/CATCH!!
   // DO FIRST: Make the calendar table with the columns above.
   // DO SECOND: insert a row of dummy data (make sure the user_id is the main user you will be logged in as)
   // DO THIRD: GET the row from the database (You'll need to pass the correct user_id from the frontend when doing this)
@@ -61,14 +60,18 @@ const Calendar = (props: Props) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/calendar?user_id=1`,
-        {
-          method: "GET",
-        }
-      )
-      const data = await response.json()
-      console.log("DATA RETURNEEDDDDD: ", data)
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/calendar?user_id=1`,
+          {
+            method: "GET",
+          }
+        )
+        const data = await response.json()
+        console.log("DATA RETURNEEDDDDD: ", data)
+      } catch (e) {
+        console.log("HIT CATCH: ", e)
+      }
     }
     fetchData()
   }, [])

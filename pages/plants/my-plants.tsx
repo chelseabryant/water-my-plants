@@ -13,15 +13,19 @@ const MyPlants = ({}: Props) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/plants/my-plants?user_id=${user.id}`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        }
-      )
-      const data = await response.json()
-      setMyPlants(data)
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/plants/my-plants?user_id=${user.id}`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+        const data = await response.json()
+        setMyPlants(data)
+      } catch (e) {
+        console.log("HIT CATCH: ", e)
+      }
     }
     fetchData()
   }, [])

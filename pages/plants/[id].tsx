@@ -16,15 +16,19 @@ export default function PlantDetails() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/plants/${
-          router.query.id
-        }${user.id ? `?user_id=${user.id}` : ""}`,
-        { method: "GET" }
-      )
-      const data = await response.json()
-      setPlant(data.plant_details[0])
-      setAddedPlant(data.added_plant)
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/plants/${
+            router.query.id
+          }${user.id ? `?user_id=${user.id}` : ""}`,
+          { method: "GET" }
+        )
+        const data = await response.json()
+        setPlant(data.plant_details[0])
+        setAddedPlant(data.added_plant)
+      } catch (e) {
+        console.log("HIT CATCH: ", e)
+      }
     }
     if (router?.query?.id) {
       fetchData()
@@ -69,7 +73,6 @@ associated with that user. */
           }),
         }
       )
-      const data = await response.json()
     } catch (e) {
       console.log("HIT CATCH: ", e)
       setAddedPlant(true)

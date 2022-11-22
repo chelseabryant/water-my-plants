@@ -11,14 +11,18 @@ const Explore = (props: Props) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/plants`,
-        {
-          method: "GET",
-        }
-      )
-      const data = await response.json()
-      setPlants(data)
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/plants`,
+          {
+            method: "GET",
+          }
+        )
+        const data = await response.json()
+        setPlants(data)
+      } catch (e) {
+        console.log("HIT CATCH: ", e)
+      }
     }
     fetchData()
   }, [])
