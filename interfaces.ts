@@ -21,3 +21,13 @@ export interface IMyPlant {
     name: string,
     image: string
 }
+
+export interface ICalendar {
+    id: number,
+    user_id: number,
+    title: string,
+    start_date: string,
+    end_date: string,
+    action_type: string,
+    description: string
+}

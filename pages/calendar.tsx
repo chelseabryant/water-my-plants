@@ -1,9 +1,18 @@
-import FullCalendar, { EventContentArg, EventInput } from "@fullcalendar/react"
+import FullCalendar, {
+  EventClickArg,
+  EventContentArg,
+  EventInput,
+} from "@fullcalendar/react"
 import React, { useEffect, useState } from "react"
 import Header from "../components/Header"
 import dayGridPlugin from "@fullcalendar/daygrid"
 import timeGridPlugin from "@fullcalendar/timegrid"
 import interactionPlugin from "@fullcalendar/interaction"
+import { stringify } from "querystring"
+import { start } from "repl"
+import { ICalendar } from "../interfaces"
+import Modal from "../components/modal/Modal"
+import { formatDate } from "../utils/formatDate"
 
 type Props = {}
 
@@ -18,7 +27,13 @@ const Calendar = (props: Props) => {
       end: end,
     },
   ]
-  const [events, setEvents] = useState<EventInput[]>(initialEvents)
+  // const [events, setEvents] = useState<EventInput[]>(initialEvents)
+  const [allEvents, setAllEvents] = useState<ICalendar[]>([])
+  const [events, setEvents] = useState<EventInput[]>([])
+  const [isOpened, setIsOpened] = useState<boolean>(false)
+  const [selectedEvent, setSelectedEvent] = useState<EventClickArg>(
+    {} as EventClickArg
+  )
 
   interface databaseCalendarRowExample {
     id: number //primary key serial
@@ -67,14 +82,39 @@ const Calendar = (props: Props) => {
             method: "GET",
           }
         )
-        const data = await response.json()
-        console.log("DATA RETURNEEDDDDD: ", data)
+        const data: ICalendar[] = await response.json()
+        console.log("dattaaa", data)
+        setAllEvents(data)
+        const newEvents: Array<{}> = data.map((event) => {
+          const eachEvent = {
+            id: event.id,
+            title: event.action_type,
+            start: new Date(event.start_date),
+            end: new Date(event.end_date),
+          }
+          return eachEvent
+        })
+        setEvents(newEvents)
       } catch (e) {
         console.log("HIT CATCH: ", e)
       }
     }
     fetchData()
   }, [])
+
+  function renderEventContent(events: EventInput) {
+    return (
+      <>
+        <i>{events.event.title}</i>
+        <b>{formatDate(events.event.start)}</b>
+      </>
+    )
+  }
+
+  const onEventClick = (e: EventClickArg) => {
+    setSelectedEvent(e)
+    setIsOpened(true)
+  }
 
   return (
     <div>
@@ -98,30 +138,32 @@ const Calendar = (props: Props) => {
           events={events}
           // --------------- DONT TOUCH ANYTHING ABOVE HERE ------------- //
           // fire a function here when the user clicks on any date without an event or on a date with an event but not clicking the actual event
-          select={(e) => console.log("select", e)}
+          // select={(e) => console.log("select", e)}
           // Render JSX from the function provided, use the argument caught in the function to get the event's info
           eventContent={renderEventContent}
           // When an event is clicked
-          eventClick={(e) => console.log("eventClick", e)}
+          eventClick={onEventClick}
           // --------- Probably don't need these below ------ //
           // you can update a remote database when these fire:
           eventAdd={function () {}}
           eventChange={function () {}}
           eventRemove={function () {}}
-          eventsSet={(e) => console.log("eventsSet", e)} // called after events are initialized/added/changed/removed
+          // eventsSet={(e) => console.log("eventsSet", e)} // called after events are initialized/added/changed/removed
         />
       </div>
+      <Modal isOpened={isOpened} onClose={() => setIsOpened(false)}>
+        {selectedEvent.event && (
+          <>
+            <h2>{selectedEvent.event.title}</h2>
+            <p>
+              {formatDate(selectedEvent.event.start)} -{" "}
+              {formatDate(selectedEvent.event.end)}
+            </p>
+            <p>List of plants here</p>
+          </>
+        )}
+      </Modal>
     </div>
-  )
-}
-
-function renderEventContent(eventContent: EventContentArg) {
-  // Update below to make event on calendar look different
-  return (
-    <>
-      <b>{eventContent.timeText}</b>
-      <i>{eventContent.event.title}</i>
-    </>
   )
 }
 
