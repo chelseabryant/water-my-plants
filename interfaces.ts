@@ -28,6 +28,6 @@ export interface ICalendar {
     title: string,
     start_date: string,
     end_date: string,
-    action_type: string,
-    description: string
+    notes: string,
+    plant_ids: string
 }

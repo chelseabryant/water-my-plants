@@ -1,6 +1,6 @@
 import FullCalendar, {
+  DateSelectArg,
   EventClickArg,
-  EventContentArg,
   EventInput,
 } from "@fullcalendar/react"
 import React, { useEffect, useState } from "react"
@@ -13,6 +13,7 @@ import { start } from "repl"
 import { ICalendar } from "../interfaces"
 import Modal from "../components/modal/Modal"
 import { formatDate } from "../utils/formatDate"
+import { useUser } from "../contexts/UserContext"
 
 type Props = {}
 
@@ -34,6 +35,10 @@ const Calendar = (props: Props) => {
   const [selectedEvent, setSelectedEvent] = useState<EventClickArg>(
     {} as EventClickArg
   )
+  const [dateSelect, setDateSelect] = useState<DateSelectArg>(
+    {} as DateSelectArg
+  )
+  const { user } = useUser()
 
   interface databaseCalendarRowExample {
     id: number //primary key serial
@@ -77,18 +82,17 @@ const Calendar = (props: Props) => {
     const fetchData = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/calendar?user_id=1`,
+          `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/calendar?user_id=${user.id}`,
           {
             method: "GET",
           }
         )
         const data: ICalendar[] = await response.json()
-        console.log("dattaaa", data)
         setAllEvents(data)
-        const newEvents: Array<{}> = data.map((event) => {
+        const newEvents: EventInput[] = data.map((event) => {
           const eachEvent = {
-            id: event.id,
-            title: event.action_type,
+            id: event.id.toString(),
+            title: event.title,
             start: new Date(event.start_date),
             end: new Date(event.end_date),
           }
@@ -116,6 +120,22 @@ const Calendar = (props: Props) => {
     setIsOpened(true)
   }
 
+  const onDateSelect = async (e: DateSelectArg) => {
+    // const response = await fetch()
+
+    setDateSelect(e)
+    setIsOpened(true)
+  }
+
+  const onModalClose = () => {
+    setIsOpened(false)
+    setSelectedEvent({} as EventClickArg)
+    setDateSelect({} as DateSelectArg)
+  }
+
+  console.log("alllll", allEvents)
+  console.log("selected", selectedEvent)
+
   return (
     <div>
       <Header />
@@ -138,7 +158,7 @@ const Calendar = (props: Props) => {
           events={events}
           // --------------- DONT TOUCH ANYTHING ABOVE HERE ------------- //
           // fire a function here when the user clicks on any date without an event or on a date with an event but not clicking the actual event
-          // select={(e) => console.log("select", e)}
+          select={onDateSelect}
           // Render JSX from the function provided, use the argument caught in the function to get the event's info
           eventContent={renderEventContent}
           // When an event is clicked
@@ -148,18 +168,29 @@ const Calendar = (props: Props) => {
           eventAdd={function () {}}
           eventChange={function () {}}
           eventRemove={function () {}}
-          // eventsSet={(e) => console.log("eventsSet", e)} // called after events are initialized/added/changed/removed
+          eventsSet={(e) => console.log("eventsSet", e)} // called after events are initialized/added/changed/removed
         />
       </div>
-      <Modal isOpened={isOpened} onClose={() => setIsOpened(false)}>
+      <Modal isOpened={isOpened} onClose={onModalClose}>
         {selectedEvent.event && (
           <>
             <h2>{selectedEvent.event.title}</h2>
+            {allEvents.map((e) =>
+              e.id.toString() === selectedEvent.event.id ? <p>{e.notes}</p> : ""
+            )}
             <p>
               {formatDate(selectedEvent.event.start)} -{" "}
               {formatDate(selectedEvent.event.end)}
             </p>
             <p>List of plants here</p>
+          </>
+        )}
+        {dateSelect.start && (
+          <>
+            <input placeholder="Enter action here" />
+            <input placeholder="Start time" />
+            <input placeholder="End time" />
+            <input placeholder="Notes" />
           </>
         )}
       </Modal>
