@@ -10,7 +10,7 @@ import timeGridPlugin from "@fullcalendar/timegrid"
 import interactionPlugin from "@fullcalendar/interaction"
 import { stringify } from "querystring"
 import { start } from "repl"
-import { ICalendar } from "../interfaces"
+import { ICalendar, IMyPlant, IPlant } from "../interfaces"
 import Modal from "../components/modal/Modal"
 import { formatDate } from "../utils/formatDate"
 import { useUser } from "../contexts/UserContext"
@@ -32,6 +32,13 @@ const Calendar = (props: Props) => {
   const [allEvents, setAllEvents] = useState<ICalendar[]>([])
   const [events, setEvents] = useState<EventInput[]>([])
   const [isOpened, setIsOpened] = useState<boolean>(false)
+  const [myPlants, setMyPlants] = useState<IMyPlant[]>([])
+  const [plantIds, setPlantIds] = useState<number[]>([])
+  const [startTime, setStartTime] = useState("")
+  const [endTime, setEndTime] = useState("")
+  const [notes, setNotes] = useState("")
+  const [eventAction, setEventAction] = useState("")
+  const [newEvent, setNewEvent] = useState(0)
   const [selectedEvent, setSelectedEvent] = useState<EventClickArg>(
     {} as EventClickArg
   )
@@ -39,6 +46,7 @@ const Calendar = (props: Props) => {
     {} as DateSelectArg
   )
   const { user } = useUser()
+  const calendarAction = ["Water", "Fertilize", "Humidify", "Clean my plants!"]
 
   interface databaseCalendarRowExample {
     id: number //primary key serial
@@ -104,7 +112,7 @@ const Calendar = (props: Props) => {
       }
     }
     fetchData()
-  }, [])
+  }, [newEvent])
 
   function renderEventContent(events: EventInput) {
     return (
@@ -115,26 +123,90 @@ const Calendar = (props: Props) => {
     )
   }
 
-  const onEventClick = (e: EventClickArg) => {
+  const onEventClick = async (e: EventClickArg) => {
+    // const response = await fetch()
+
     setSelectedEvent(e)
     setIsOpened(true)
   }
 
   const onDateSelect = async (e: DateSelectArg) => {
-    // const response = await fetch()
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/plants/my-plants?user_id=${user.id}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      )
+      const data = await response.json()
+      setMyPlants(data)
+    } catch (e) {
+      console.log("HIT CATCH: ", e)
+    }
 
     setDateSelect(e)
     setIsOpened(true)
+  }
+
+  const onActionClick = (action: string) => {
+    setEventAction(action)
+  }
+
+  const startInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setStartTime(e.target.value)
+  }
+
+  const endInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEndTime(e.target.value)
+  }
+
+  const notesInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNotes(e.target.value)
+  }
+
+  const onPlantClick = (plant: IMyPlant) => {
+    setPlantIds([...plantIds, plant.id])
+  }
+
+  const onAddEventClick = async () => {
+    const plants = plantIds.join()
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/calendar/post-event`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user: user.id,
+            action: eventAction,
+            start: startTime,
+            end: endTime,
+            notes: notes,
+            plants: plants,
+          }),
+        }
+      )
+    } catch (e) {
+      console.log("HIT CATCH: ", e)
+    }
+    setNewEvent(newEvent + 1)
   }
 
   const onModalClose = () => {
     setIsOpened(false)
     setSelectedEvent({} as EventClickArg)
     setDateSelect({} as DateSelectArg)
+    setEventAction("")
+    setStartTime("")
+    setEndTime("")
+    setNotes("")
+    setPlantIds([])
   }
 
-  console.log("alllll", allEvents)
-  console.log("selected", selectedEvent)
+  // const id = allEvents.map((e) => e.plant_ids.split(","))
+  // const a = id.map((i) => Number(i))
+  // console.log("SDFGH", a)
 
   return (
     <div>
@@ -175,22 +247,59 @@ const Calendar = (props: Props) => {
         {selectedEvent.event && (
           <>
             <h2>{selectedEvent.event.title}</h2>
-            {allEvents.map((e) =>
-              e.id.toString() === selectedEvent.event.id ? <p>{e.notes}</p> : ""
-            )}
             <p>
               {formatDate(selectedEvent.event.start)} -{" "}
               {formatDate(selectedEvent.event.end)}
             </p>
-            <p>List of plants here</p>
+            {allEvents.map((e) =>
+              e.id.toString() === selectedEvent.event.id ? <p>{e.notes}</p> : ""
+            )}
+
+            {/* This won't render on event unless datewithout event is clicked. Should I move this 
+            get req (myPlants) to the useEffect?
+                
+            {myPlants.map((plant) => (
+              <button
+                key={plant.id}
+              >
+                {plant.name}
+              </button>
+            ))} */}
           </>
         )}
         {dateSelect.start && (
           <>
-            <input placeholder="Enter action here" />
-            <input placeholder="Start time" />
-            <input placeholder="End time" />
-            <input placeholder="Notes" />
+            <p>New calendar event</p>
+            {calendarAction.map((action) => (
+              <button
+                key={action}
+                onClick={() => onActionClick(action)}
+                disabled={eventAction === action}
+              >
+                {action}
+              </button>
+            ))}
+            <input placeholder="Start time" onChange={startInput} />
+            <input placeholder="End time" onChange={endInput} />
+            <input placeholder="Notes" onChange={notesInput} />
+            <p>Click on plant to add to event!</p>
+            {myPlants.map((plant) => (
+              <button
+                key={plant.id}
+                onClick={() => onPlantClick(plant)}
+                disabled={plantIds.includes(plant.id)}
+              >
+                {plant.name}
+              </button>
+            ))}
+            <button
+              onClick={() => {
+                onAddEventClick()
+                setIsOpened(false)
+              }}
+            >
+              Add Event
+            </button>
           </>
         )}
       </Modal>
