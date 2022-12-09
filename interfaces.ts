@@ -1,3 +1,5 @@
+import { EventClickArg } from "@fullcalendar/react"
+
 export interface IUser {
     id: number,
     username: string,

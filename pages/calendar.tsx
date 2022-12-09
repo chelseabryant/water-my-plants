@@ -33,12 +33,13 @@ const Calendar = (props: Props) => {
   const [events, setEvents] = useState<EventInput[]>([])
   const [isOpened, setIsOpened] = useState<boolean>(false)
   const [myPlants, setMyPlants] = useState<IMyPlant[]>([])
-  const [plantIds, setPlantIds] = useState<number[]>([])
+  const [addPlantIds, setAddPlantIds] = useState<number[]>([])
   const [startTime, setStartTime] = useState("")
   const [endTime, setEndTime] = useState("")
   const [notes, setNotes] = useState("")
   const [eventAction, setEventAction] = useState("")
   const [newEvent, setNewEvent] = useState(0)
+  const [eventPlantIds, setEventPlantIds] = useState<number[] | undefined>([])
   const [selectedEvent, setSelectedEvent] = useState<EventClickArg>(
     {} as EventClickArg
   )
@@ -113,6 +114,26 @@ const Calendar = (props: Props) => {
     }
     fetchData()
   }, [newEvent])
+  // TODO : Change dependency array
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/plants/my-plants?user_id=${user.id}`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+        const data = await response.json()
+        setMyPlants(data)
+      } catch (e) {
+        console.log("HIT CATCH: ", e)
+      }
+    }
+    fetchData()
+  }, [])
 
   function renderEventContent(events: EventInput) {
     return (
@@ -124,27 +145,48 @@ const Calendar = (props: Props) => {
   }
 
   const onEventClick = async (e: EventClickArg) => {
-    // const response = await fetch()
+    const findEvent = allEvents.find((event) => {
+      return event.id.toString() === e.event.id
+    })
+    const plantIds = findEvent?.plant_ids.split(",").map((i) => parseInt(i))
 
     setSelectedEvent(e)
+    setEventPlantIds(plantIds)
     setIsOpened(true)
   }
 
-  const onDateSelect = async (e: DateSelectArg) => {
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/plants/my-plants?user_id=${user.id}`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        }
-      )
-      const data = await response.json()
-      setMyPlants(data)
-    } catch (e) {
-      console.log("HIT CATCH: ", e)
-    }
+  const onEventPlantClick = async (plant: IMyPlant) => {
+    if (eventPlantIds) {
+      const newPlantIdString = [...eventPlantIds, plant.id].join()
+      setEventPlantIds([...eventPlantIds, plant.id])
 
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/calendar/update-plant-ids`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user: user.id,
+              event: selectedEvent.event.id,
+              plant_ids: newPlantIdString,
+            }),
+          }
+        )
+        const data = await response.json()
+        const updatedEvents = allEvents.map((event) =>
+          event.id === data.id ? data : event
+        )
+        setAllEvents(updatedEvents)
+      } catch (e) {
+        console.log("HIT CATCH: ", e)
+      }
+    }
+  }
+  // Idk if this is the correct way to handle this!! also below when rendering the buttons
+  // do i need to do an "else" for if there were no plants selected in the first place?
+
+  const onDateSelect = (e: DateSelectArg) => {
     setDateSelect(e)
     setIsOpened(true)
   }
@@ -165,12 +207,12 @@ const Calendar = (props: Props) => {
     setNotes(e.target.value)
   }
 
-  const onPlantClick = (plant: IMyPlant) => {
-    setPlantIds([...plantIds, plant.id])
+  const onAddPlantClick = (plant: IMyPlant) => {
+    setAddPlantIds([...addPlantIds, plant.id])
   }
 
   const onAddEventClick = async () => {
-    const plants = plantIds.join()
+    const plants = addPlantIds.join()
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/calendar/post-event`,
@@ -201,12 +243,9 @@ const Calendar = (props: Props) => {
     setStartTime("")
     setEndTime("")
     setNotes("")
-    setPlantIds([])
+    setAddPlantIds([])
+    setEventPlantIds([])
   }
-
-  // const id = allEvents.map((e) => e.plant_ids.split(","))
-  // const a = id.map((i) => Number(i))
-  // console.log("SDFGH", a)
 
   return (
     <div>
@@ -252,19 +291,22 @@ const Calendar = (props: Props) => {
               {formatDate(selectedEvent.event.end)}
             </p>
             {allEvents.map((e) =>
-              e.id.toString() === selectedEvent.event.id ? <p>{e.notes}</p> : ""
+              e.id.toString() === selectedEvent.event.id ? (
+                <p key={e.id}>{e.notes}</p>
+              ) : (
+                ""
+              )
             )}
-
-            {/* This won't render on event unless datewithout event is clicked. Should I move this 
-            get req (myPlants) to the useEffect?
-                
-            {myPlants.map((plant) => (
-              <button
-                key={plant.id}
-              >
-                {plant.name}
-              </button>
-            ))} */}
+            {eventPlantIds &&
+              myPlants.map((plant) => (
+                <button
+                  key={plant.id}
+                  disabled={eventPlantIds.includes(plant.id)}
+                  onClick={() => onEventPlantClick(plant)}
+                >
+                  {plant.name}
+                </button>
+              ))}
           </>
         )}
         {dateSelect.start && (
@@ -286,8 +328,8 @@ const Calendar = (props: Props) => {
             {myPlants.map((plant) => (
               <button
                 key={plant.id}
-                onClick={() => onPlantClick(plant)}
-                disabled={plantIds.includes(plant.id)}
+                onClick={() => onAddPlantClick(plant)}
+                disabled={addPlantIds.includes(plant.id)}
               >
                 {plant.name}
               </button>
