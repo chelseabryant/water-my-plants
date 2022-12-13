@@ -233,6 +233,7 @@ const Calendar = (props: Props) => {
       console.log("HIT CATCH: ", e)
     }
     setNewEvent(newEvent + 1)
+    setDateSelect({} as DateSelectArg)
   }
 
   const onModalClose = () => {
@@ -334,6 +335,8 @@ const Calendar = (props: Props) => {
                 {plant.name}
               </button>
             ))}
+            <br />
+            <br />
             <button
               onClick={() => {
                 onAddEventClick()
