@@ -40,6 +40,8 @@ const Calendar = (props: Props) => {
   const [eventAction, setEventAction] = useState("")
   const [newEvent, setNewEvent] = useState(0)
   const [eventPlantIds, setEventPlantIds] = useState<number[] | undefined>([])
+  const [isEditing, setIsEditing] = useState(false)
+  const [editInput, setEditInput] = useState<string | undefined>("")
   const [selectedEvent, setSelectedEvent] = useState<EventClickArg>(
     {} as EventClickArg
   )
@@ -113,7 +115,7 @@ const Calendar = (props: Props) => {
       }
     }
     fetchData()
-  }, [newEvent])
+  }, [newEvent, isEditing])
   // TODO : Change dependency array
 
   useEffect(() => {
@@ -152,6 +154,7 @@ const Calendar = (props: Props) => {
 
     setSelectedEvent(e)
     setEventPlantIds(plantIds)
+    setEditInput(findEvent?.notes)
     setIsOpened(true)
   }
 
@@ -185,6 +188,32 @@ const Calendar = (props: Props) => {
   }
   // Idk if this is the correct way to handle this!! also below when rendering the buttons
   // do i need to do an "else" for if there were no plants selected in the first place?
+
+  const onEditClick = async () => {
+    if (isEditing) {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/calendar/update-notes`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user: user.id,
+              event: selectedEvent.event.id,
+              notes: editInput,
+            }),
+          }
+        )
+      } catch (e) {
+        console.log("HIT CATCH: ", e)
+      }
+    }
+    setIsEditing(!isEditing)
+  }
+
+  const onEditInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditInput(e.target.value)
+  }
 
   const onDateSelect = (e: DateSelectArg) => {
     setDateSelect(e)
@@ -252,102 +281,113 @@ const Calendar = (props: Props) => {
     <div>
       <Header />
       <h3>Calendar</h3>
-      <div style={{ width: "80%" }}>
-        <FullCalendar
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          headerToolbar={{
-            left: "prev,next today",
-            center: "title",
-            right: "dayGridMonth,timeGridWeek,timeGridDay",
-          }}
-          initialView="dayGridMonth"
-          editable={true}
-          // Set below to false to turn off drag and dropo
-          selectable={true}
-          selectMirror={true}
-          dayMaxEvents={true}
-          weekends
-          events={events}
-          // --------------- DONT TOUCH ANYTHING ABOVE HERE ------------- //
-          // fire a function here when the user clicks on any date without an event or on a date with an event but not clicking the actual event
-          select={onDateSelect}
-          // Render JSX from the function provided, use the argument caught in the function to get the event's info
-          eventContent={renderEventContent}
-          // When an event is clicked
-          eventClick={onEventClick}
-          // --------- Probably don't need these below ------ //
-          // you can update a remote database when these fire:
-          eventAdd={function () {}}
-          eventChange={function () {}}
-          eventRemove={function () {}}
-          eventsSet={(e) => console.log("eventsSet", e)} // called after events are initialized/added/changed/removed
-        />
-      </div>
-      <Modal isOpened={isOpened} onClose={onModalClose}>
-        {selectedEvent.event && (
-          <>
-            <h2>{selectedEvent.event.title}</h2>
-            <p>
-              {formatDate(selectedEvent.event.start)} -{" "}
-              {formatDate(selectedEvent.event.end)}
-            </p>
-            {allEvents.map((e) =>
-              e.id.toString() === selectedEvent.event.id ? (
-                <p key={e.id}>{e.notes}</p>
-              ) : (
-                ""
-              )
-            )}
-            {eventPlantIds &&
-              myPlants.map((plant) => (
-                <button
-                  key={plant.id}
-                  disabled={eventPlantIds.includes(plant.id)}
-                  onClick={() => onEventPlantClick(plant)}
-                >
-                  {plant.name}
-                </button>
-              ))}
-          </>
-        )}
-        {dateSelect.start && (
-          <>
-            <p>New calendar event</p>
-            {calendarAction.map((action) => (
-              <button
-                key={action}
-                onClick={() => onActionClick(action)}
-                disabled={eventAction === action}
-              >
-                {action}
-              </button>
-            ))}
-            <input placeholder="Start time" onChange={startInput} />
-            <input placeholder="End time" onChange={endInput} />
-            <input placeholder="Notes" onChange={notesInput} />
-            <p>Click on plant to add to event!</p>
-            {myPlants.map((plant) => (
-              <button
-                key={plant.id}
-                onClick={() => onAddPlantClick(plant)}
-                disabled={addPlantIds.includes(plant.id)}
-              >
-                {plant.name}
-              </button>
-            ))}
-            <br />
-            <br />
-            <button
-              onClick={() => {
-                onAddEventClick()
-                setIsOpened(false)
+      {user.id ? (
+        <>
+          <div style={{ width: "80%" }}>
+            <FullCalendar
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              headerToolbar={{
+                left: "prev,next today",
+                center: "title",
+                right: "dayGridMonth,timeGridWeek,timeGridDay",
               }}
-            >
-              Add Event
-            </button>
-          </>
-        )}
-      </Modal>
+              initialView="dayGridMonth"
+              editable={true}
+              // Set below to false to turn off drag and dropo
+              selectable={true}
+              selectMirror={true}
+              dayMaxEvents={true}
+              weekends
+              events={events}
+              // --------------- DONT TOUCH ANYTHING ABOVE HERE ------------- //
+              // fire a function here when the user clicks on any date without an event or on a date with an event but not clicking the actual event
+              select={onDateSelect}
+              // Render JSX from the function provided, use the argument caught in the function to get the event's info
+              eventContent={renderEventContent}
+              // When an event is clicked
+              eventClick={onEventClick}
+              // --------- Probably don't need these below ------ //
+              // you can update a remote database when these fire:
+              eventAdd={function () {}}
+              eventChange={function () {}}
+              eventRemove={function () {}}
+              eventsSet={(e) => console.log("eventsSet", e)} // called after events are initialized/added/changed/removed
+            />
+          </div>
+          <Modal isOpened={isOpened} onClose={onModalClose}>
+            {selectedEvent.event && (
+              <>
+                <h2>{selectedEvent.event.title}</h2>
+                <p>
+                  {formatDate(selectedEvent.event.start)} -{" "}
+                  {formatDate(selectedEvent.event.end)}
+                </p>
+
+                <input
+                  value={editInput}
+                  disabled={!isEditing}
+                  onChange={onEditInput}
+                />
+
+                <button onClick={onEditClick}>
+                  {isEditing ? "Save" : "Edit"}
+                </button>
+                <br />
+                <br />
+                {eventPlantIds &&
+                  myPlants.map((plant) => (
+                    <button
+                      key={plant.id}
+                      disabled={eventPlantIds.includes(plant.id)}
+                      onClick={() => onEventPlantClick(plant)}
+                    >
+                      {plant.name}
+                    </button>
+                  ))}
+              </>
+            )}
+            {dateSelect.start && (
+              <>
+                <p>New calendar event</p>
+                {calendarAction.map((action) => (
+                  <button
+                    key={action}
+                    onClick={() => onActionClick(action)}
+                    disabled={eventAction === action}
+                  >
+                    {action}
+                  </button>
+                ))}
+                <input placeholder="Start time" onChange={startInput} />
+                <input placeholder="End time" onChange={endInput} />
+                <input placeholder="Notes" onChange={notesInput} />
+                <p>Click on plant to add to event!</p>
+                {myPlants.map((plant) => (
+                  <button
+                    key={plant.id}
+                    onClick={() => onAddPlantClick(plant)}
+                    disabled={addPlantIds.includes(plant.id)}
+                  >
+                    {plant.name}
+                  </button>
+                ))}
+                <br />
+                <br />
+                <button
+                  onClick={() => {
+                    onAddEventClick()
+                    setIsOpened(false)
+                  }}
+                >
+                  Add Event
+                </button>
+              </>
+            )}
+          </Modal>
+        </>
+      ) : (
+        <p>Please login to use this page</p>
+      )}
     </div>
   )
 }
