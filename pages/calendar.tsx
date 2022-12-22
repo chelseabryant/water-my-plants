@@ -90,51 +90,55 @@ const Calendar = (props: Props) => {
   // After each network request, make sure to setEvents(returnedData)
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/calendar?user_id=${user.id}`,
-          {
-            method: "GET",
-          }
-        )
-        const data: ICalendar[] = await response.json()
-        setAllEvents(data)
-        const newEvents: EventInput[] = data.map((event) => {
-          const eachEvent = {
-            id: event.id.toString(),
-            title: event.title,
-            start: new Date(event.start_date),
-            end: new Date(event.end_date),
-          }
-          return eachEvent
-        })
-        setEvents(newEvents)
-      } catch (e) {
-        console.log("HIT CATCH: ", e)
+    if (user.id) {
+      const fetchData = async () => {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/calendar?user_id=${user.id}`,
+            {
+              method: "GET",
+            }
+          )
+          const data: ICalendar[] = await response.json()
+          setAllEvents(data)
+          const newEvents: EventInput[] = data.map((event) => {
+            const eachEvent = {
+              id: event.id.toString(),
+              title: event.title,
+              start: new Date(event.start_date),
+              end: new Date(event.end_date),
+            }
+            return eachEvent
+          })
+          setEvents(newEvents)
+        } catch (e) {
+          console.log("HIT CATCH: ", e)
+        }
       }
+      fetchData()
     }
-    fetchData()
-  }, [newEvent, isEditing])
-  // TODO : Change dependency array
+  }, [newEvent, isEditing, user.id])
+  // TODO : Change dependency at array [0]
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/plants/my-plants?user_id=${user.id}`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          }
-        )
-        const data = await response.json()
-        setMyPlants(data)
-      } catch (e) {
-        console.log("HIT CATCH: ", e)
+    if (user.id) {
+      const fetchData = async () => {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/plants/my-plants?user_id=${user.id}`,
+            {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+            }
+          )
+          const data = await response.json()
+          setMyPlants(data)
+        } catch (e) {
+          console.log("HIT CATCH: ", e)
+        }
       }
+      fetchData()
     }
-    fetchData()
   }, [])
 
   function renderEventContent(events: EventInput) {

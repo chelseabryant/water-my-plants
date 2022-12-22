@@ -12,22 +12,24 @@ const MyPlants = ({}: Props) => {
   const [myPlants, setMyPlants] = useState<IMyPlant[]>([])
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/plants/my-plants?user_id=${user.id}`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          }
-        )
-        const data = await response.json()
-        setMyPlants(data)
-      } catch (e) {
-        console.log("HIT CATCH: ", e)
+    if (user.id) {
+      const fetchData = async () => {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_REQUEST_BASE_URL}/a/plants/my-plants?user_id=${user.id}`,
+            {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+            }
+          )
+          const data = await response.json()
+          setMyPlants(data)
+        } catch (e) {
+          console.log("HIT CATCH: ", e)
+        }
       }
+      fetchData()
     }
-    fetchData()
   }, [])
 
   return (
